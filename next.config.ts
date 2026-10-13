@@ -3,8 +3,9 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   serverExternalPackages: ["pg"],
   poweredByHeader: false,
-  // Lets LAN devices hydrate the dev server when it is bound to 0.0.0.0.
-  allowedDevOrigins: ["192.168.*.*", "*.lan"],
+  // Opt-in LAN access to the dev server, e.g. ALLOWED_DEV_ORIGINS=192.168.1.189.
+  // Unset keeps Next's default of trusting only the server's own hostname.
+  allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS?.split(","),
   async headers() {
     const headers = [
       { key: "X-Content-Type-Options", value: "nosniff" },
