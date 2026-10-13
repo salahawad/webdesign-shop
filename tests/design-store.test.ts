@@ -5,6 +5,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   addVersion,
+  countDesigns,
+  deleteDesign,
   getVersionHtml,
   listDesigns,
   MissingDesignError,
@@ -64,6 +66,25 @@ test("concurrent uploads preserve originals and assign distinct revisions; hando
       await getVersionHtml(imported.versions[0].id),
       demos[0].versions[0].html,
     );
+
+    // Server-side pagination, filtering, counting, and deletion
+    await addVersion({
+      ...input,
+      name: "Analytics Portal",
+      category: "Dashboard",
+    });
+    assert.equal(await countDesigns(), 3);
+    assert.equal(await countDesigns({ category: "Dashboard" }), 1);
+    assert.equal(
+      (await listDesigns({ search: "analytics" }))[0].name,
+      "Analytics Portal",
+    );
+    const paged = await listDesigns({ limit: 1, offset: 1 });
+    assert.equal(paged.length, 1);
+
+    assert.equal(await deleteDesign(id), true);
+    assert.equal(await deleteDesign("missing"), false);
+    assert.equal(await countDesigns(), 2);
   } finally {
     process.chdir(oldCwd);
     if (oldUrl !== undefined) process.env.DATABASE_URL = oldUrl;
