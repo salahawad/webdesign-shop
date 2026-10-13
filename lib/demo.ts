@@ -1,17 +1,105 @@
-export type Version = {id:string; designId:string; number:number; html:string; author:string; role:string; notes:string; source:string; createdAt:string; status:string};
-export type Design = {id:string; name:string; category:string; createdAt:string; versions:Version[]; example?:boolean};
-function sample(n:number, type='commerce') {
- if(type==='dashboard')return `<!doctype html><html><head><style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#f8f8fc;color:#333348}.layout{display:flex;min-height:100vh}aside{width:145px;background:#fff;padding:25px 18px;border-right:1px solid #eee}aside b{font-size:22px}aside p{font-size:11px;margin-top:26px;color:#8b87a2}aside p:first-of-type{color:#8872ce;background:#f1ecfc;padding:10px;border-radius:6px}main{flex:1;padding:30px}header{display:flex;justify-content:space-between}header small{color:#9995aa}h1{font-size:25px;margin:25px 0 6px}p{font-size:11px;color:#9996a8}.stats{display:flex;gap:15px;margin:25px 0}.stats div{flex:1;background:white;border:1px solid #eee;border-radius:8px;padding:20px}.stats span{display:block;color:#a29cad;font-size:10px}.stats b{display:block;font-size:23px;margin-top:10px}.chart{background:white;border:1px solid #eee;border-radius:8px;padding:20px;height:230px}.bars{display:flex;align-items:end;gap:15px;height:155px;margin-top:10px}.bars i{flex:1;background:#b3a2e1;border-radius:5px 5px 0 0}.chart strong{font-size:12px}</style></head><body><div class="layout"><aside><b>◈ orbit.</b><p>Overview</p><p>Analytics</p><p>Customers</p><p>Reports</p></aside><main><header><small>Workspace / Overview</small><small>Last 30 days ▾</small></header><h1>A clearer picture.</h1><p>Everything you need to see how your business is growing.</p><div class="stats"><div><span>Total revenue</span><b>$24,580</b></div><div><span>Active users</span><b>1,284</b></div><div><span>Conversion</span><b>4.8%</b></div></div><div class="chart"><strong>Revenue overview</strong><div class="bars">${[35,48,40,62,55,77,70,90,80,100,88,115].map(h=>`<i style="height:${h}px"></i>`).join('')}</div></div></main></div></body></html>`;
- if(type==='app')return `<!doctype html><html><head><style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#f8f4ee;color:#544636;display:grid;place-items:center;min-height:100vh}.card{background:white;width:380px;border-radius:16px;padding:32px;box-shadow:0 10px 40px #9d806212;text-align:center}.logo{font-weight:bold;font-size:20px}.art{height:110px;display:flex;align-items:center;justify-content:center;margin:20px 0;gap:5px}.art span{display:block;width:45px;height:80px;background:#cfb99d;border-radius:40px 40px 9px 9px;transform:rotate(-18deg)}.art span:nth-child(2){background:#8a9c86;transform:rotate(8deg);height:100px}.art span:nth-child(3){background:#e9c49e;transform:rotate(23deg)}h1{font-size:26px;letter-spacing:-1px}p{font-size:12px;color:#aa9d8c;line-height:1.8}label{display:block;text-align:left;font-size:10px;margin:22px 0 8px;color:#9d8a74}input{border:1px solid #eee4d9;border-radius:7px;width:100%;padding:12px;font-size:11px}button{width:100%;padding:13px;border:0;background:#8d9c80;color:white;border-radius:7px;margin-top:15px;font-size:11px}.steps{font-size:10px;color:#b7aa9a;margin-top:20px}</style></head><body><div class="card"><div class="logo">gather.</div><div class="art"><span></span><span></span><span></span></div><h1>A little space for your people.</h1><p>Bring your team together.<br>Start with a name that feels like you.</p><label>Your workspace name</label><input placeholder="e.g. The creative corner"><button>Let's get started →</button><div class="steps">● &nbsp; ○ &nbsp; ○ &nbsp; &nbsp; Step 1 of 3</div></div></body></html>`;
- return `<!doctype html>
+export type Version = {
+  id: string;
+  designId: string;
+  number: number;
+  html: string;
+  author: string;
+  role: string;
+  notes: string;
+  source: string;
+  createdAt: string;
+  status: string;
+};
+export type Design = {
+  id: string;
+  name: string;
+  category: string;
+  createdAt: string;
+  versions: Version[];
+  example?: boolean;
+};
+function sample(n: number, type = "commerce") {
+  if (type === "dashboard")
+    return `<!doctype html><html><head><style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#f8f8fc;color:#333348}.layout{display:flex;min-height:100vh}aside{width:145px;background:#fff;padding:25px 18px;border-right:1px solid #eee}aside b{font-size:22px}aside p{font-size:11px;margin-top:26px;color:#8b87a2}aside p:first-of-type{color:#8872ce;background:#f1ecfc;padding:10px;border-radius:6px}main{flex:1;padding:30px}header{display:flex;justify-content:space-between}header small{color:#9995aa}h1{font-size:25px;margin:25px 0 6px}p{font-size:11px;color:#9996a8}.stats{display:flex;gap:15px;margin:25px 0}.stats div{flex:1;background:white;border:1px solid #eee;border-radius:8px;padding:20px}.stats span{display:block;color:#a29cad;font-size:10px}.stats b{display:block;font-size:23px;margin-top:10px}.chart{background:white;border:1px solid #eee;border-radius:8px;padding:20px;height:230px}.bars{display:flex;align-items:end;gap:15px;height:155px;margin-top:10px}.bars i{flex:1;background:#b3a2e1;border-radius:5px 5px 0 0}.chart strong{font-size:12px}</style></head><body><div class="layout"><aside><b>◈ orbit.</b><p>Overview</p><p>Analytics</p><p>Customers</p><p>Reports</p></aside><main><header><small>Workspace / Overview</small><small>Last 30 days ▾</small></header><h1>A clearer picture.</h1><p>Everything you need to see how your business is growing.</p><div class="stats"><div><span>Total revenue</span><b>$24,580</b></div><div><span>Active users</span><b>1,284</b></div><div><span>Conversion</span><b>4.8%</b></div></div><div class="chart"><strong>Revenue overview</strong><div class="bars">${[35, 48, 40, 62, 55, 77, 70, 90, 80, 100, 88, 115].map((h) => `<i style="height:${h}px"></i>`).join("")}</div></div></main></div></body></html>`;
+  if (type === "app")
+    return `<!doctype html><html><head><style>*{box-sizing:border-box}body{margin:0;font-family:Arial;background:#f8f4ee;color:#544636;display:grid;place-items:center;min-height:100vh}.card{background:white;width:380px;border-radius:16px;padding:32px;box-shadow:0 10px 40px #9d806212;text-align:center}.logo{font-weight:bold;font-size:20px}.art{height:110px;display:flex;align-items:center;justify-content:center;margin:20px 0;gap:5px}.art span{display:block;width:45px;height:80px;background:#cfb99d;border-radius:40px 40px 9px 9px;transform:rotate(-18deg)}.art span:nth-child(2){background:#8a9c86;transform:rotate(8deg);height:100px}.art span:nth-child(3){background:#e9c49e;transform:rotate(23deg)}h1{font-size:26px;letter-spacing:-1px}p{font-size:12px;color:#aa9d8c;line-height:1.8}label{display:block;text-align:left;font-size:10px;margin:22px 0 8px;color:#9d8a74}input{border:1px solid #eee4d9;border-radius:7px;width:100%;padding:12px;font-size:11px}button{width:100%;padding:13px;border:0;background:#8d9c80;color:white;border-radius:7px;margin-top:15px;font-size:11px}.steps{font-size:10px;color:#b7aa9a;margin-top:20px}</style></head><body><div class="card"><div class="logo">gather.</div><div class="art"><span></span><span></span><span></span></div><h1>A little space for your people.</h1><p>Bring your team together.<br>Start with a name that feels like you.</p><label>Your workspace name</label><input placeholder="e.g. The creative corner"><button>Let's get started →</button><div class="steps">● &nbsp; ○ &nbsp; ○ &nbsp; &nbsp; Step 1 of 3</div></div></body></html>`;
+  return `<!doctype html>
 <html><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#242b27;background:#fafbf8}nav{padding:23px 7%;display:flex;justify-content:space-between;border-bottom:1px solid #e1e5df}.logo{font-size:23px;font-weight:800}nav span{font-size:12px}main{padding:55px 7%}.eyebrow{font-size:11px;letter-spacing:2px;color:#69785f}h1{font-size:48px;letter-spacing:-2px;max-width:450px;line-height:1.05;margin:20px 0}p{font-size:14px;color:#718070;line-height:1.7}button{background:${n===1?'#283c32':'#d5f077'};border:0;border-radius:${n===1?'4':'25'}px;padding:14px 24px;color:#26332a;font-weight:bold;margin-top:15px}.hero{display:grid;grid-template-columns:1fr 1fr;gap:30px}.visual{height:285px;background:#e7ece1;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden}.bottle{width:95px;height:180px;background:#687d59;border-radius:15px 15px 24px 24px;box-shadow:20px 25px 25px #a4ad9955;transform:rotate(-12deg);display:grid;place-items:center;color:white;letter-spacing:3px;font-size:15px}.bottle:before{content:'';position:absolute;top:-20px;width:46px;height:25px;background:#34482e;border-radius:7px}.features{display:flex;gap:35px;margin-top:40px;padding-top:22px;border-top:1px solid #ddd;font-size:12px}.badge{position:absolute;bottom:23px;right:20px;background:white;padding:10px 16px;border-radius:20px;font-size:11px}@media(max-width:600px){.hero{grid-template-columns:1fr}h1{font-size:36px}}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;color:#242b27;background:#fafbf8}nav{padding:23px 7%;display:flex;justify-content:space-between;border-bottom:1px solid #e1e5df}.logo{font-size:23px;font-weight:800}nav span{font-size:12px}main{padding:55px 7%}.eyebrow{font-size:11px;letter-spacing:2px;color:#69785f}h1{font-size:48px;letter-spacing:-2px;max-width:450px;line-height:1.05;margin:20px 0}p{font-size:14px;color:#718070;line-height:1.7}button{background:${n === 1 ? "#283c32" : "#d5f077"};border:0;border-radius:${n === 1 ? "4" : "25"}px;padding:14px 24px;color:#26332a;font-weight:bold;margin-top:15px}.hero{display:grid;grid-template-columns:1fr 1fr;gap:30px}.visual{height:285px;background:#e7ece1;border-radius:12px;display:grid;place-items:center;position:relative;overflow:hidden}.bottle{width:95px;height:180px;background:#687d59;border-radius:15px 15px 24px 24px;box-shadow:20px 25px 25px #a4ad9955;transform:rotate(-12deg);display:grid;place-items:center;color:white;letter-spacing:3px;font-size:15px}.bottle:before{content:'';position:absolute;top:-20px;width:46px;height:25px;background:#34482e;border-radius:7px}.features{display:flex;gap:35px;margin-top:40px;padding-top:22px;border-top:1px solid #ddd;font-size:12px}.badge{position:absolute;bottom:23px;right:20px;background:white;padding:10px 16px;border-radius:20px;font-size:11px}@media(max-width:600px){.hero{grid-template-columns:1fr}h1{font-size:36px}}
 </style></head><body>
-<nav><div class="logo">${type==='commerce'?'evergreen.':type==='dashboard'?'orbit.':'gather.'}</div><span>Our story &nbsp;&nbsp; Collection &nbsp;&nbsp; ${n>=2?'Bag (0)':'Shop'}</span></nav>
-<main><div class="hero"><section><div class="eyebrow">${type==='commerce'?'LESS, BUT BETTER':'MADE FOR YOUR EVERYDAY'}</div>
-<h1>${n>=3?'Good for you.<br>Better for the planet.':'Small rituals.<br>Big difference.'}</h1>
+<nav><div class="logo">${type === "commerce" ? "evergreen." : type === "dashboard" ? "orbit." : "gather."}</div><span>Our story &nbsp;&nbsp; Collection &nbsp;&nbsp; ${n >= 2 ? "Bag (0)" : "Shop"}</span></nav>
+<main><div class="hero"><section><div class="eyebrow">${type === "commerce" ? "LESS, BUT BETTER" : "MADE FOR YOUR EVERYDAY"}</div>
+<h1>${n >= 3 ? "Good for you.<br>Better for the planet." : "Small rituals.<br>Big difference."}</h1>
 <p>Thoughtfully made essentials for a slower,<br>more intentional everyday.</p>
-<button>${n>=2?'Explore the collection →':'Shop now'}</button>
-${n>=3?'<p>Free shipping on orders over $50</p>':''}</section><div class="visual"><div class="bottle">ever<br>green.</div>${n>=2?'<div class="badge">100% natural ingredients</div>':''}</div></div>
-<div class="features"><span>✳ Made with care</span><span>♧ Earth friendly</span>${n>=3?'<span>↺ Refillable by design</span>':''}</div></main></body></html>`; }
-export const demos:Design[] = [{id:'demo-evergreen',name:'Evergreen storefront',category:'Website',createdAt:'2026-10-08T09:00:00Z',example:true,versions:[1,2,3].map(n=>({id:`evergreen-${n}`,designId:'demo-evergreen',number:n,html:sample(n),author:n===2?'Alex Morgan':'Sophie Chen',role:n===2?'Product manager':'Designer',notes:n===1?'Initial storefront concept. Establish the layout, typography, and product direction.':n===2?'Updated primary CTA and button styling. Added a natural ingredients badge and shopping bag label.':'Refined hero messaging, added free shipping details, and introduced the refillable feature.',source:n===2?'Claude':'Lovable',createdAt:`2026-10-${n===1?'08':n===2?'10':'13'}T09:30:00Z`,status:n===3?'In review':'Superseded'}))},{id:'demo-orbit',name:'Orbit analytics',category:'Dashboard',createdAt:'2026-10-10T10:00:00Z',example:true,versions:[{id:'orbit-1',designId:'demo-orbit',number:1,html:sample(1,'dashboard'),author:'Alex Morgan',role:'Product manager',notes:'First exploration of the dashboard landing page.',source:'v0',createdAt:'2026-10-10T10:00:00Z',status:'Ready for dev'}]},{id:'demo-gather',name:'Gather onboarding',category:'Web app',createdAt:'2026-10-09T10:00:00Z',example:true,versions:[{id:'gather-1',designId:'demo-gather',number:1,html:sample(2,'app'),author:'Sophie Chen',role:'Designer',notes:'Welcome screen and visual direction.',source:'Claude',createdAt:'2026-10-09T10:00:00Z',status:'In review'}]}];
+<button>${n >= 2 ? "Explore the collection →" : "Shop now"}</button>
+${n >= 3 ? "<p>Free shipping on orders over $50</p>" : ""}</section><div class="visual"><div class="bottle">ever<br>green.</div>${n >= 2 ? '<div class="badge">100% natural ingredients</div>' : ""}</div></div>
+<div class="features"><span>✳ Made with care</span><span>♧ Earth friendly</span>${n >= 3 ? "<span>↺ Refillable by design</span>" : ""}</div></main></body></html>`;
+}
+export const demos: Design[] = [
+  {
+    id: "demo-evergreen",
+    name: "Evergreen storefront",
+    category: "Website",
+    createdAt: "2026-10-08T09:00:00Z",
+    example: true,
+    versions: [1, 2, 3].map((n) => ({
+      id: `evergreen-${n}`,
+      designId: "demo-evergreen",
+      number: n,
+      html: sample(n),
+      author: n === 2 ? "Alex Morgan" : "Sophie Chen",
+      role: n === 2 ? "Product manager" : "Designer",
+      notes:
+        n === 1
+          ? "Initial storefront concept. Establish the layout, typography, and product direction."
+          : n === 2
+            ? "Updated primary CTA and button styling. Added a natural ingredients badge and shopping bag label."
+            : "Refined hero messaging, added free shipping details, and introduced the refillable feature.",
+      source: n === 2 ? "Claude" : "Lovable",
+      createdAt: `2026-10-${n === 1 ? "08" : n === 2 ? "10" : "13"}T09:30:00Z`,
+      status: n === 3 ? "In review" : "Superseded",
+    })),
+  },
+  {
+    id: "demo-orbit",
+    name: "Orbit analytics",
+    category: "Dashboard",
+    createdAt: "2026-10-10T10:00:00Z",
+    example: true,
+    versions: [
+      {
+        id: "orbit-1",
+        designId: "demo-orbit",
+        number: 1,
+        html: sample(1, "dashboard"),
+        author: "Alex Morgan",
+        role: "Product manager",
+        notes: "First exploration of the dashboard landing page.",
+        source: "v0",
+        createdAt: "2026-10-10T10:00:00Z",
+        status: "Ready for dev",
+      },
+    ],
+  },
+  {
+    id: "demo-gather",
+    name: "Gather onboarding",
+    category: "Web app",
+    createdAt: "2026-10-09T10:00:00Z",
+    example: true,
+    versions: [
+      {
+        id: "gather-1",
+        designId: "demo-gather",
+        number: 1,
+        html: sample(2, "app"),
+        author: "Sophie Chen",
+        role: "Designer",
+        notes: "Welcome screen and visual direction.",
+        source: "Claude",
+        createdAt: "2026-10-09T10:00:00Z",
+        status: "In review",
+      },
+    ],
+  },
+];
