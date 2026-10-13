@@ -11,6 +11,7 @@
     "start": "next start --hostname 127.0.0.1 --port 5173",
     "typecheck": "tsc --noEmit",
     "db:migrate": "node scripts/migrate.mjs",
+    "user:add": "tsx scripts/add-user.ts",
     "test": "tsx --test tests/*.test.ts",
     "format": "prettier --write app components lib scripts tests db/index.ts README.md *.json .github"
   },

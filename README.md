@@ -24,7 +24,7 @@ npm run dev
 
 Open http://localhost:5173. Without `DATABASE_URL`, development automatically stores designs in `.data/studio.sqlite`. This directory is ignored by Git. Local uploads remain on this machine and are separate from any hosted database.
 
-To test PostgreSQL or password protection locally, copy `.env.example` to `.env.local` and fill in the values. With no password configured, the development server allows local access and binds to loopback. Production always requires team login and PostgreSQL.
+To test PostgreSQL or sign-in locally, copy `.env.example` to `.env.local` and fill in the values. Without `SESSION_SECRET`, the development server allows local access without signing in and binds to loopback. Production always requires user sign-in and PostgreSQL.
 
 ## Deploy on Vercel
 
@@ -32,13 +32,12 @@ To test PostgreSQL or password protection locally, copy `.env.example` to `.env.
 2. Provision PostgreSQL through the Vercel Marketplace, or connect an existing PostgreSQL database. Prefer the provider's pooled connection URL with TLS enabled.
 3. Add these server-side environment variables to the appropriate Vercel environments:
 
-| Variable          | Purpose                                                         |
-| ----------------- | --------------------------------------------------------------- |
-| `DATABASE_URL`    | PostgreSQL connection URL. Never prefix it with `NEXT_PUBLIC_`. |
-| `STUDIO_PASSWORD` | A strong shared team password, at least 16 characters.          |
-| `SESSION_SECRET`  | Random signing secret, at least 32 characters.                  |
+| Variable         | Purpose                                                         |
+| ---------------- | --------------------------------------------------------------- |
+| `DATABASE_URL`   | PostgreSQL connection URL. Never prefix it with `NEXT_PUBLIC_`. |
+| `SESSION_SECRET` | Random signing secret, at least 32 characters.                  |
 
-Generate independent values for the password and signing secret with this command, running it twice:
+Generate the signing secret with this command:
 
 ```sh
 node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
@@ -52,7 +51,7 @@ npm run db:migrate
 
 The migration is transactional, preserves existing rows, and can be rerun. Database credentials must have permission to create tables and indexes. Deploying the app does not run migrations automatically.
 
-5. Deploy through Vercel and share its URL and the team password through your usual private channel. Preview deployments also need their own environment variables and migrated database. Use a separate database for previews when you want to isolate test uploads.
+5. Create an account for each teammate against the same database (see [Team access](#team-access)), then deploy through Vercel and share the URL and each person's password through your usual private channel. Preview deployments also need their own environment variables and migrated database. Use a separate database for previews when you want to isolate test uploads.
 
 The production app refuses database writes without a configured login and refuses filesystem storage on Vercel. The previous Cloudflare/Sites deployment and its data are separate; this conversion does not migrate that hosted database or change that deployment.
 
@@ -60,7 +59,15 @@ Vercel documentation: [Next.js deployment](https://vercel.com/docs/frameworks/fu
 
 ## Team access
 
-The current login is a shared team password, with an HTTP-only signed session cookie that expires after seven days. All signed-in teammates can see all designs, upload revisions, and change handoff status. Author names and roles are entered by the uploader; they are attribution fields, not verified individual identities. Changing `SESSION_SECRET` invalidates existing sessions. Public source code does not make the running studio or its uploaded designs public.
+Each teammate signs in with their own username and password. Passwords are stored as salted scrypt hashes, and the HTTP-only signed session cookie expires after seven days. Create an account, or reset an existing account's password, with:
+
+```sh
+npm run user:add -- maya
+```
+
+The command prints a generated password once. It writes to PostgreSQL when `DATABASE_URL` is set (for example in `.env.local`), otherwise to the local SQLite file. To remove an account, delete its row from the `users` table; the person's sessions stop working on their next request.
+
+All signed-in teammates can see all designs, upload revisions, and change handoff status. Author names and roles are entered by the uploader; they are attribution fields, not tied to the signed-in account. Changing `SESSION_SECRET` invalidates existing sessions. Public source code does not make the running studio or its uploaded designs public.
 
 ## Checks
 

@@ -18,3 +18,8 @@ CREATE TABLE IF NOT EXISTS versions (
   UNIQUE (design_id, number)
 );
 CREATE INDEX IF NOT EXISTS versions_design_id_idx ON versions(design_id);
+CREATE TABLE IF NOT EXISTS users (
+  username TEXT PRIMARY KEY,
+  password_hash TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);

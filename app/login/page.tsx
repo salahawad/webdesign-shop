@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 
 export default function Login() {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -25,7 +26,7 @@ export default function Login() {
       const response = await fetch("/api/session", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ username, password }),
       });
       const body = await response.json();
       if (!response.ok) throw new Error(body.error);
@@ -52,19 +53,31 @@ export default function Login() {
           </div>
           <h1 id="login-heading">Your next iteration starts here.</h1>
           <p>
-            Enter your team’s studio password to review designs, compare
+            Sign in with your studio account to review designs, compare
             versions, and keep the developer handoff moving.
           </p>
         </div>
         <form onSubmit={submit}>
-          <label htmlFor="password">Studio password</label>
+          <label htmlFor="username">Username</label>
+          <input
+            id="username"
+            className="username-field"
+            autoFocus
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="Enter your username…"
+            required
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+          />
+          <label htmlFor="password">Password</label>
           <div className="password-field">
             <input
               id="password"
-              autoFocus
               autoComplete="current-password"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter shared team password…"
+              placeholder="Enter your password…"
               required
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -109,7 +122,10 @@ export default function Login() {
             <CheckCircle2 size={13} aria-hidden="true" /> Dev handoff
           </span>
         </div>
-        <small>One shared workspace for your product team.</small>
+        <small>
+          One shared workspace for your product team. Ask your studio admin for
+          an account.
+        </small>
       </section>
     </main>
   );

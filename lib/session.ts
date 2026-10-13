@@ -1,59 +1,57 @@
-import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
+import { userExists, USERNAME } from "./users";
 
 export const SESSION_COOKIE = "sa-studio-session";
 export const SESSION_SECONDS = 60 * 60 * 24 * 7;
 
 export function loginConfiguration(): "open-local" | "protected" | "missing" {
   if (
-    !process.env.STUDIO_PASSWORD &&
+    !process.env.SESSION_SECRET &&
     process.env.NODE_ENV !== "production" &&
     !process.env.VERCEL
   )
     return "open-local";
-  if (
-    (process.env.STUDIO_PASSWORD?.length ?? 0) < 16 ||
-    (process.env.SESSION_SECRET?.length ?? 0) < 32
-  )
-    return "missing";
-  return "protected";
+  return (process.env.SESSION_SECRET?.length ?? 0) < 32
+    ? "missing"
+    : "protected";
 }
 
-export function validPassword(password: string) {
-  if (loginConfiguration() !== "protected") return false;
-  return timingSafeEqual(
-    createHash("sha256").update(password).digest(),
-    createHash("sha256").update(process.env.STUDIO_PASSWORD!).digest(),
-  );
-}
+const sign = (payload: string) =>
+  createHmac("sha256", process.env.SESSION_SECRET!).update(payload).digest();
 
-export function createSession(now = Date.now()) {
+export function createSession(username: string, now = Date.now()) {
   if (loginConfiguration() !== "protected")
-    throw new Error("Team login is not configured.");
-  const payload = String(now + SESSION_SECONDS * 1000);
-  return `${payload}.${createHmac("sha256", process.env.SESSION_SECRET!).update(payload).digest("hex")}`;
+    throw new Error("Sign-in is not configured.");
+  const payload = `${username}.${now + SESSION_SECONDS * 1000}`;
+  return `${payload}.${sign(payload).toString("hex")}`;
 }
 
-export function validSession(token: string | undefined, now = Date.now()) {
-  if (loginConfiguration() !== "protected" || !token) return false;
-  const [payload, signature, extra] = token.split(".");
+export function sessionUser(token: string | undefined, now = Date.now()) {
+  if (loginConfiguration() !== "protected" || !token) return undefined;
+  const [username, expiry, signature, extra] = token.split(".");
   if (
-    extra ||
-    !/^\d+$/.test(payload) ||
+    extra !== undefined ||
+    !USERNAME.test(username) ||
+    !/^\d+$/.test(expiry ?? "") ||
     !/^[a-f0-9]{64}$/.test(signature ?? "")
   )
-    return false;
-  if (Number(payload) <= now || Number(payload) > now + SESSION_SECONDS * 1000)
-    return false;
-  const expected = createHmac("sha256", process.env.SESSION_SECRET!)
-    .update(payload)
-    .digest();
-  return timingSafeEqual(Buffer.from(signature, "hex"), expected);
+    return undefined;
+  if (Number(expiry) <= now || Number(expiry) > now + SESSION_SECONDS * 1000)
+    return undefined;
+  return timingSafeEqual(
+    Buffer.from(signature, "hex"),
+    sign(`${username}.${expiry}`),
+  )
+    ? username
+    : undefined;
 }
 
 export async function authorized() {
   if (loginConfiguration() === "open-local") return true;
-  return validSession((await cookies()).get(SESSION_COOKIE)?.value);
+  const username = sessionUser((await cookies()).get(SESSION_COOKIE)?.value);
+  // Checking the account on every request means deleting a user ends their sessions.
+  return username !== undefined && (await userExists(username));
 }
 
 export function sameOrigin(request: Request) {

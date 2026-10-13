@@ -5,8 +5,8 @@ import {
   sameOrigin,
   SESSION_COOKIE,
   SESSION_SECONDS,
-  validPassword,
 } from "@/lib/session";
+import { USERNAME, verifyUser } from "@/lib/users";
 
 export const runtime = "nodejs";
 const json = (data: unknown, status = 200) =>
@@ -19,23 +19,28 @@ export async function POST(request: Request) {
     return json(
       {
         error:
-          "Team login is not configured. Set STUDIO_PASSWORD and SESSION_SECRET in the deployment settings.",
+          "Sign-in is not configured. Set SESSION_SECRET in the deployment settings.",
       },
       503,
     );
   if (loginConfiguration() === "open-local") return json({ ok: true });
   try {
     const body = await request.json();
+    const username =
+      typeof body.username === "string"
+        ? body.username.trim().toLowerCase()
+        : "";
     if (
+      !USERNAME.test(username) ||
       typeof body.password !== "string" ||
       body.password.length > 1024 ||
-      !validPassword(body.password)
+      !(await verifyUser(username, body.password))
     ) {
       // Make guesses more costly without retaining IP addresses or passwords.
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      return json({ error: "Incorrect studio password." }, 401);
+      return json({ error: "Incorrect username or password." }, 401);
     }
-    (await cookies()).set(SESSION_COOKIE, createSession(), {
+    (await cookies()).set(SESSION_COOKIE, createSession(username), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

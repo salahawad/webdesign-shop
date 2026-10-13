@@ -7,6 +7,7 @@ import {
   listDesigns,
   updateStatus,
 } from "../lib/design-store";
+import { setUser, userExists, verifyUser } from "../lib/users";
 
 test(
   "PostgreSQL serializes simultaneous uploads for the same design",
@@ -61,6 +62,34 @@ test(
         } finally {
           await pool.end();
         }
+      }
+      if (previous === undefined) delete process.env.DATABASE_URL;
+      else process.env.DATABASE_URL = previous;
+    }
+  },
+);
+
+test(
+  "PostgreSQL stores users and resets an existing user's password",
+  { skip: !process.env.STUDIO_TEST_DATABASE_URL },
+  async () => {
+    const previous = process.env.DATABASE_URL;
+    process.env.DATABASE_URL = process.env.STUDIO_TEST_DATABASE_URL;
+    const username = `ci-${Date.now()}`;
+    try {
+      await setUser(username, "first-password");
+      await setUser(username, "reset-password");
+      assert.equal(await verifyUser(username, "first-password"), false);
+      assert.equal(await verifyUser(username, "reset-password"), true);
+      assert.equal(await userExists(username), true);
+    } finally {
+      const pool = new Pool({
+        connectionString: process.env.STUDIO_TEST_DATABASE_URL,
+      });
+      try {
+        await pool.query("DELETE FROM users WHERE username=$1", [username]);
+      } finally {
+        await pool.end();
       }
       if (previous === undefined) delete process.env.DATABASE_URL;
       else process.env.DATABASE_URL = previous;

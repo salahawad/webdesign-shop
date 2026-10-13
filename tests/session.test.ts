@@ -4,44 +4,45 @@ import {
   createSession,
   loginConfiguration,
   sameOrigin,
-  validPassword,
-  validSession,
+  sessionUser,
   SESSION_SECONDS,
 } from "../lib/session";
 
-test("team sessions require configured secrets and reject forged, expired, and future tokens", () => {
+test("user sessions require a signing secret and reject forged, swapped, expired, and future tokens", () => {
   const old = {
-    password: process.env.STUDIO_PASSWORD,
     secret: process.env.SESSION_SECRET,
     nodeEnv: process.env.NODE_ENV,
   };
   Object.assign(process.env, {
     NODE_ENV: "production",
-    STUDIO_PASSWORD: "test-password-for-unit-tests",
     SESSION_SECRET: "test-signing-secret-long-enough-for-unit-tests",
   });
   try {
     assert.equal(loginConfiguration(), "protected");
-    assert.equal(validPassword("test-password-for-unit-tests"), true);
-    assert.equal(validPassword("wrong"), false);
     const now = 1000000;
-    const token = createSession(now);
-    assert.equal(validSession(token, now), true);
-    assert.equal(validSession(token, now + SESSION_SECONDS * 1000), false);
-    assert.equal(validSession(createSession(now + 1000), now), false);
+    const token = createSession("maya", now);
+    assert.equal(sessionUser(token, now), "maya");
+    assert.equal(sessionUser(token, now + SESSION_SECONDS * 1000), undefined);
     assert.equal(
-      validSession(token.slice(0, -1) + (token.endsWith("0") ? "1" : "0"), now),
-      false,
+      sessionUser(createSession("maya", now + 1000), now),
+      undefined,
     );
-    assert.equal(validSession(token + ".extra", now), false);
-    assert.equal(validSession("garbage", now), false);
-    assert.equal(validSession(undefined, now), false);
-    delete process.env.STUDIO_PASSWORD;
+    assert.equal(
+      sessionUser(token.slice(0, -1) + (token.endsWith("0") ? "1" : "0"), now),
+      undefined,
+    );
+    // A valid signature for one user must not sign in another.
+    assert.equal(sessionUser(token.replace(/^maya/, "salah"), now), undefined);
+    assert.equal(sessionUser(token + ".extra", now), undefined);
+    assert.equal(sessionUser("garbage", now), undefined);
+    assert.equal(sessionUser(undefined, now), undefined);
+    delete process.env.SESSION_SECRET;
     assert.equal(loginConfiguration(), "missing");
-    assert.equal(validSession(token, now), false);
+    assert.equal(sessionUser(token, now), undefined);
+    Object.assign(process.env, { NODE_ENV: "development" });
+    assert.equal(loginConfiguration(), "open-local");
   } finally {
     for (const [key, value] of Object.entries({
-      STUDIO_PASSWORD: old.password,
       SESSION_SECRET: old.secret,
       NODE_ENV: old.nodeEnv,
     })) {
