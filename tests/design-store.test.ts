@@ -5,10 +5,12 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   addVersion,
+  getVersionHtml,
   listDesigns,
   MissingDesignError,
   updateStatus,
 } from "../lib/design-store";
+import { demos } from "../lib/demo";
 
 test("concurrent uploads preserve originals and assign distinct revisions; handoff persists", async () => {
   const oldCwd = process.cwd();
@@ -36,7 +38,10 @@ test("concurrent uploads preserve originals and assign distinct revisions; hando
       design.versions.map((v) => v.number),
       [1, 2, 3, 4],
     );
-    assert.equal(design.versions[0].html, input.html);
+    // The list stays small; each version's HTML is loaded separately.
+    assert.equal(design.versions[0].html, undefined);
+    assert.equal(await getVersionHtml(design.versions[0].id), input.html);
+    assert.equal(await getVersionHtml("missing"), undefined);
     assert.equal(design.versions[0].notes, "First draft");
     assert.equal(
       await updateStatus(design.versions[3].id, "Ready for dev"),
@@ -54,6 +59,10 @@ test("concurrent uploads preserve originals and assign distinct revisions; hando
     assert.deepEqual(
       imported.versions.map((v) => v.number),
       [1, 2, 3, 4],
+    );
+    assert.equal(
+      await getVersionHtml(imported.versions[0].id),
+      demos[0].versions[0].html,
     );
   } finally {
     process.chdir(oldCwd);

@@ -2,7 +2,8 @@ export type Version = {
   id: string;
   designId: string;
   number: number;
-  html: string;
+  // Built-in examples carry their HTML; stored versions load it on demand.
+  html?: string;
   author: string;
   role: string;
   notes: string;

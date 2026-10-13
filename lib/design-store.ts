@@ -18,7 +18,6 @@ function version(row: Record<string, unknown>): Version {
     id: String(row.id),
     designId: String(row.design_id),
     number: Number(row.number),
-    html: String(row.html),
     author: String(row.author),
     role: String(row.role),
     notes: String(row.notes),
@@ -33,8 +32,11 @@ export async function listDesigns(): Promise<Design[]> {
     const designs = await query(
       "SELECT * FROM designs ORDER BY created_at DESC",
     );
+    // HTML is fetched per version: the full set would exceed Vercel's 4.5 MB response limit.
     const revisions = (
-      await query("SELECT * FROM versions ORDER BY number")
+      await query(
+        "SELECT id,design_id,number,author,role,notes,source,created_at,status FROM versions ORDER BY number",
+      )
     ).map(version);
     return designs
       .map((row) => ({
@@ -67,7 +69,7 @@ export async function addVersion(input: Upload): Promise<string> {
               v.id,
               id,
               v.number,
-              v.html,
+              v.html ?? "",
               v.author,
               v.role,
               v.notes,
@@ -102,6 +104,13 @@ export async function addVersion(input: Upload): Promise<string> {
     );
     return id;
   }, true);
+}
+
+export async function getVersionHtml(id: string): Promise<string | undefined> {
+  return database(async (query) => {
+    const [row] = await query("SELECT html FROM versions WHERE id = ?", [id]);
+    return row ? String(row.html) : undefined;
+  });
 }
 
 export async function updateStatus(

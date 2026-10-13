@@ -33,13 +33,20 @@ export async function database<T>(
   transaction = false,
 ): Promise<T> {
   if (process.env.DATABASE_URL) {
-    pool ??= new Pool({
-      connectionString: process.env.DATABASE_URL,
-      max: 3,
-      connectionTimeoutMillis: 10000,
-      idleTimeoutMillis: 10000,
-    });
+    if (!pool) {
+      pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        max: 3,
+        connectionTimeoutMillis: 10000,
+        idleTimeoutMillis: 10000,
+      });
+      // Hosted PostgreSQL drops idle connections; an unhandled pool error would crash the process.
+      pool.on("error", (error) =>
+        console.error("PostgreSQL idle client error:", error.message),
+      );
+    }
     const client = await pool.connect();
+    let broken: Error | undefined;
     const query: Query = async (sql, params = []) => {
       let n = 0;
       return (
@@ -55,10 +62,14 @@ export async function database<T>(
       if (transaction) await client.query("COMMIT");
       return result;
     } catch (error) {
-      if (transaction) await client.query("ROLLBACK");
+      // Keep the original error; discard the connection if it cannot roll back.
+      if (transaction)
+        await client.query("ROLLBACK").catch((rollbackError: Error) => {
+          broken = rollbackError;
+        });
       throw error;
     } finally {
-      client.release();
+      client.release(broken);
     }
   }
   // Serialize local requests on the single SQLite connection, including reads.

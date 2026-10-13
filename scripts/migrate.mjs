@@ -13,21 +13,21 @@ const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
   max: 1,
 });
-const client = await pool.connect();
+let client;
 try {
+  client = await pool.connect();
   await client.query("BEGIN");
   await client.query(
     await readFile(new URL("../db/postgres.sql", import.meta.url), "utf8"),
   );
   await client.query("COMMIT");
   console.log("SA Studio database schema is ready.");
-} catch {
-  await client.query("ROLLBACK");
-  console.error(
-    "Database migration failed. Check DATABASE_URL and database connectivity.",
-  );
+} catch (error) {
+  await client?.query("ROLLBACK").catch(() => {});
+  // pg error messages describe the failure (auth, SSL, permissions) without the connection string.
+  console.error(`Database migration failed: ${error.message}`);
   process.exitCode = 1;
 } finally {
-  client.release();
+  client?.release();
   await pool.end();
 }

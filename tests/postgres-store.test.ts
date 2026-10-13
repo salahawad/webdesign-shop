@@ -1,7 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { Pool } from "pg";
-import { addVersion, listDesigns, updateStatus } from "../lib/design-store";
+import {
+  addVersion,
+  getVersionHtml,
+  listDesigns,
+  updateStatus,
+} from "../lib/design-store";
 
 test(
   "PostgreSQL serializes simultaneous uploads for the same design",
@@ -35,7 +40,8 @@ test(
         design.versions.map((v) => v.number),
         [1, 2, 3, 4, 5, 6, 7, 8, 9],
       );
-      assert.equal(design.versions[0].html, input.html);
+      assert.equal(design.versions[0].html, undefined);
+      assert.equal(await getVersionHtml(design.versions[0].id), input.html);
       assert.equal(
         await updateStatus(design.versions[8].id, "Ready for dev"),
         true,

@@ -1,5 +1,5 @@
 ﻿"use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import {
   ArrowUpRight,
   ArrowRight,
@@ -22,7 +22,7 @@ import {
   Folder,
   CheckCircle2,
 } from "lucide-react";
-import { demos, Design } from "../lib/demo";
+import { demos, Design, type Version } from "../lib/demo";
 type Diff = { kind: "same" | "add" | "remove"; text: string };
 function diff(a: string, b: string): Diff[] {
   const x = a.split("\n"),
@@ -83,6 +83,8 @@ function structural(a: string, b: string) {
   return items;
 }
 const last = (d: Design) => d.versions[d.versions.length - 1];
+const placeholder = (text: string) =>
+  `<p style="margin:0;padding:16px;font:12px sans-serif;color:#9b93ac">${text}</p>`;
 export default function Studio() {
   const [designs, setDesigns] = useState<Design[]>(demos),
     [selected, setSelected] = useState("demo-evergreen"),
@@ -116,7 +118,28 @@ export default function Studio() {
       : d.versions[Math.min(revision, d.versions.length - 1)];
   const left = d.versions[Math.min(from, d.versions.length - 1)],
     right = d.versions[Math.min(to, d.versions.length - 1)];
-  const changes = diff(left.html, right.html);
+  // Stored versions arrive without HTML; null marks a failed fetch until the next retry.
+  const [htmlCache, setHtmlCache] = useState<Record<string, string | null>>(
+    {},
+  );
+  const fetching = useRef(new Set<string>());
+  const htmlOf = (z: Version) => z.html ?? htmlCache[z.id];
+  const previewDoc = (z: Version) =>
+    htmlOf(z) ??
+    placeholder(
+      htmlOf(z) === null ? "Preview unavailable." : "Loading preview…",
+    );
+  const leftHtml = htmlOf(left),
+    rightHtml = htmlOf(right);
+  const comparing = tab === "Compare" && leftHtml != null && rightHtml != null;
+  // The line diff is quadratic: compute it only for the Compare tab, not on every keystroke.
+  const changes = useMemo(
+    () =>
+      tab === "Compare" && leftHtml != null && rightHtml != null
+        ? diff(leftHtml, rightHtml)
+        : [],
+    [tab, leftHtml, rightHtml],
+  );
   const [summary, setSummary] = useState<string[]>([]);
   async function load() {
     try {
@@ -131,6 +154,10 @@ export default function Studio() {
         ...data,
         ...demos.filter((x) => !data.some((a: Design) => a.id === x.id)),
       ]);
+      // Retry previews that failed earlier.
+      setHtmlCache((cache) =>
+        Object.fromEntries(Object.entries(cache).filter(([, h]) => h !== null)),
+      );
       setSaved(true);
       setError("");
     } catch (e) {
@@ -143,8 +170,12 @@ export default function Studio() {
     load();
   }, []);
   useEffect(() => {
-    setSummary(structural(left.html, right.html));
-  }, [left.html, right.html]);
+    setSummary(
+      tab === "Compare" && leftHtml != null && rightHtml != null
+        ? structural(leftHtml, rightHtml)
+        : [],
+    );
+  }, [tab, leftHtml, rightHtml]);
   useEffect(() => {
     if (toast) {
       const t = setTimeout(() => setToast(""), 4500);
@@ -283,6 +314,31 @@ export default function Studio() {
       (filter === "All statuses" || last(x).status === filter) &&
       (nav !== "Ready for dev" || last(x).status === "Ready for dev"),
   );
+  const wanted = [
+    ...new Set(
+      [...filtered.map(last), v, ...(tab === "Compare" ? [left, right] : [])]
+        .filter((z) => htmlOf(z) === undefined)
+        .map((z) => z.id),
+    ),
+  ].join("\n");
+  useEffect(() => {
+    for (const id of wanted ? wanted.split("\n") : []) {
+      if (fetching.current.has(id)) continue;
+      fetching.current.add(id);
+      fetch(`/api/versions/${encodeURIComponent(id)}`)
+        .then(async (r) => {
+          if (r.status === 401) return window.location.assign("/login");
+          const body: any = await r.json();
+          if (!r.ok) throw Error(body.error);
+          setHtmlCache((cache) => ({ ...cache, [id]: body.html }));
+        })
+        .catch((e) => {
+          setHtmlCache((cache) => ({ ...cache, [id]: null }));
+          setError(e instanceof Error ? e.message : "Preview unavailable");
+        })
+        .finally(() => fetching.current.delete(id));
+    }
+  }, [wanted]);
   return (
     <div
       className={
@@ -557,7 +613,7 @@ export default function Studio() {
                       <div className="thumbnail-frame">
                         <iframe
                           title={x.name + " miniature"}
-                          srcDoc={last(x).html}
+                          srcDoc={previewDoc(last(x))}
                           sandbox="allow-scripts"
                           tabIndex={-1}
                         />
@@ -618,7 +674,7 @@ export default function Studio() {
                   <div>
                     <div className="detail-overline">
                       <span className="dot Website" />
-                      {d.category} {d.example && <span>⬢ Example project</span>}
+                      {d.category} {d.example && <span>• Example project</span>}
                     </div>
                     <h2>
                       {d.name}{" "}
@@ -708,9 +764,12 @@ export default function Studio() {
                         </small>
                         <button
                           aria-label="Download HTML"
-                          onClick={() =>
-                            download(v.html, `${d.name}-v${v.number}.html`)
-                          }
+                          disabled={htmlOf(v) == null}
+                          onClick={() => {
+                            const html = htmlOf(v);
+                            if (html != null)
+                              download(html, `${d.name}-v${v.number}.html`);
+                          }}
                         >
                           <Download size={14} />
                         </button>
@@ -718,7 +777,7 @@ export default function Studio() {
                       <iframe
                         title="Design preview"
                         sandbox="allow-scripts"
-                        srcDoc={v.html}
+                        srcDoc={previewDoc(v)}
                       />
                       <div className="preview-foot">
                         <span>
@@ -898,9 +957,11 @@ export default function Studio() {
                           <FileCode2 size={17} />
                         </span>
                         <strong>
-                          {left.html === right.html
-                            ? "No changes between these versions"
-                            : "What changed"}{" "}
+                          {!comparing
+                            ? "Loading versions…"
+                            : leftHtml === rightHtml
+                              ? "No changes between these versions"
+                              : "What changed"}{" "}
                         </strong>
                         <span className="diff-count add">
                           +{changes.filter((z) => z.kind === "add").length}{" "}
@@ -939,7 +1000,7 @@ export default function Studio() {
                               title={
                                 i === 0 ? "Previous design" : "Updated design"
                               }
-                              srcDoc={z.html}
+                              srcDoc={previewDoc(z)}
                             />
                           </div>
                         ))}
@@ -963,6 +1024,7 @@ export default function Studio() {
                     )}
                     <button
                       className="secondary export"
+                      disabled={!comparing}
                       onClick={() =>
                         download(
                           `Design: ${d.name}\nComparison: v${left.number} → v${right.number}\n\n${summary.join("\n")}\n\nVersion notes: ${right.notes}\n\n${changes
@@ -1119,6 +1181,7 @@ export default function Studio() {
                   <select
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
+                    disabled={modal === "version"}
                   >
                     <option>Website</option>
                     <option>Dashboard</option>
@@ -1129,7 +1192,7 @@ export default function Studio() {
               <label>
                 What changed?
                 <textarea
-                  placeholder="Describe the decisions behind this iteration⬦"
+                  placeholder="Describe the decisions behind this iteration…"
                   value={notes}
                   maxLength={3000}
                   onChange={(e) => setNotes(e.target.value)}
