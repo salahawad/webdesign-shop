@@ -1,8 +1,9 @@
 import { readFile } from "node:fs/promises";
-import { loadEnvConfig } from "@next/env";
+import nextEnv from "@next/env";
 import pg from "pg";
 
-loadEnvConfig(process.cwd());
+// @next/env is a bundled CommonJS module, so ESM cannot import its exports by name.
+nextEnv.loadEnvConfig(process.cwd());
 if (!process.env.DATABASE_URL) {
   console.error(
     "Set DATABASE_URL before running the PostgreSQL migration. Local development uses SQLite automatically.",
